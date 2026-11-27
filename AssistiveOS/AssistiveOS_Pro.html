@@ -1,0 +1,1931 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>نظام التواصل والتحكم الذكي الشامل - Assistive OS Pro</title>
+
+    <style>
+        :root {
+            --bg-color: #0b1120;
+            --card-bg: #1e293b;
+            --card-hover: #334155;
+            --primary: #38bdf8;
+            --accent: #818cf8;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --whatsapp: #25D366;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #head-cursor {
+            position: fixed;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 99999;
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.04s linear;
+        }
+
+        .cursor-dot {
+            width: 14px;
+            height: 14px;
+            background-color: var(--primary);
+            border-radius: 50%;
+            box-shadow: 0 0 12px var(--primary), 0 0 24px #fff;
+        }
+
+        .progress-ring {
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring__circle {
+            stroke: var(--success);
+            stroke-width: 5;
+            fill: transparent;
+            r: 21;
+            cx: 25;
+            cy: 25;
+            stroke-dasharray: 131.946;
+            stroke-dashoffset: 131.946;
+            transition: stroke-dashoffset 0.05s linear;
+        }
+
+        header {
+            height: 11vh;
+            background-color: #020617;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 1.5vw;
+            border-bottom: 2px solid #1e293b;
+        }
+
+        .status-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #camera-preview {
+            width: 85px;
+            height: 62px;
+            border-radius: 10px;
+            border: 2px solid var(--primary);
+            transform: scaleX(-1);
+            object-fit: cover;
+            background: #000;
+        }
+
+        .clock {
+            font-size: clamp(1.2rem, 2.2vw, 1.9rem);
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .tracking-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .top-controls {
+            display: flex;
+            gap: 1vw;
+            height: 78%;
+        }
+
+        .gaze-btn {
+            background-color: var(--card-bg);
+            border: 3px solid #334155;
+            border-radius: 16px;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            padding: 8px;
+            text-align: center;
+            position: relative;
+        }
+
+        .gaze-btn:hover, .gaze-btn.hovered {
+            background-color: var(--card-hover);
+            border-color: var(--primary);
+            transform: scale(1.03);
+            box-shadow: 0 0 22px rgba(56, 189, 248, 0.35);
+        }
+
+        .gaze-btn.active-state {
+            border-color: var(--success);
+            background-color: rgba(34, 197, 94, 0.2);
+        }
+
+        
+        #hover-click-toggle-btn {
+            padding: 0 14px;
+            flex-direction: row;
+            gap: 8px;
+            border-color: var(--success);
+            background-color: rgba(34, 197, 94, 0.16);
+            color: #dcfce7;
+            white-space: nowrap;
+        }
+        #hover-click-toggle-btn.click-paused {
+            border-color: var(--warning);
+            background-color: rgba(245, 158, 11, 0.18);
+            color: #fef3c7;
+        }
+        .hover-status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--success);
+            display: inline-block;
+        }
+        #hover-click-toggle-btn.click-paused .hover-status-dot {
+            background: var(--warning);
+        }
+
+        .btn-emergency {
+            background-color: rgba(239, 68, 68, 0.2);
+            border-color: var(--danger);
+            color: #fca5a5;
+            padding: 0 22px;
+            font-size: clamp(1rem, 1.6vw, 1.4rem);
+            font-weight: bold;
+            flex-direction: row;
+            gap: 8px;
+        }
+
+        .btn-emergency:hover, .btn-emergency.hovered {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        main {
+            height: 77vh;
+            padding: 1.5vh 1.5vw;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+        }
+
+        .screen.active {
+            display: grid;
+            gap: 1.5vh 1.5vw;
+        }
+
+        .grid-main {
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+        }
+
+        .grid-needs {
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+        }
+
+        .grid-devices {
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+        }
+
+        .grid-internet {
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+        }
+
+        .icon {
+            font-size: clamp(2.2rem, 4.2vw, 3.8rem);
+            margin-bottom: 0.8vh;
+        }
+
+        .label {
+            font-size: clamp(1.1rem, 1.9vw, 1.7rem);
+            font-weight: bold;
+        }
+
+        .sub-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        #screen-keyboard.active {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2vh;
+        }
+
+        .text-display-bar {
+            height: 14%;
+            background: #020617;
+            border: 2px solid var(--primary);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            font-size: clamp(1.4rem, 2.6vw, 2.2rem);
+            color: var(--success);
+            overflow-x: auto;
+        }
+
+        .quick-phrases-bar {
+            height: 11%;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1vw;
+        }
+
+        .phrase-btn {
+            background: #1e1b4b;
+            border-color: var(--accent);
+            font-size: clamp(0.95rem, 1.4vw, 1.25rem);
+            font-weight: bold;
+        }
+
+        .keyboard-grid {
+            height: 75%;
+            display: grid;
+            grid-template-columns: repeat(11, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 0.8vh 0.8vw;
+        }
+
+        .key-btn {
+            font-size: clamp(1.1rem, 1.8vw, 1.6rem);
+            font-weight: bold;
+        }
+
+        .key-wide {
+            grid-column: span 2;
+        }
+
+        #screen-browser.active {
+            display: flex;
+            flex-direction: column;
+            gap: 1vh;
+        }
+
+        .browser-toolbar {
+            height: 12%;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1vw;
+        }
+
+        .browser-frame-container {
+            height: 88%;
+            background: #020617;
+            border: 2px solid var(--primary);
+            border-radius: 14px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        iframe#web-viewer {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #fff;
+        }
+
+        #screen-comm.active {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2vw;
+        }
+
+        .comm-panel {
+            background: #020617;
+            border: 2px solid #1e293b;
+            border-radius: 16px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5vh;
+        }
+
+        .comm-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.2vh 1.2vw;
+            flex: 1;
+        }
+
+        footer {
+            height: 12vh;
+            background-color: #020617;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 1vw;
+            padding: 1vh 1.5vw;
+            border-top: 2px solid #1e293b;
+        }
+
+        .nav-btn {
+            flex-direction: row;
+            gap: 8px;
+            font-size: clamp(0.95rem, 1.4vw, 1.25rem);
+            font-weight: bold;
+        }
+
+        .nav-btn.current-tab {
+            border-color: var(--primary);
+            background-color: rgba(56, 189, 248, 0.18);
+        }
+
+        #calibration-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.97);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 25px;
+        }
+
+        .cal-card {
+            background: var(--card-bg);
+            border: 2px solid var(--primary);
+            border-radius: 24px;
+            padding: 35px;
+            max-width: 720px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+        }
+
+        .cal-btn {
+            margin-top: 25px;
+            padding: 18px 45px;
+            font-size: 1.6rem;
+            background: var(--primary);
+            color: #020617;
+            border: none;
+            border-radius: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .cal-btn:hover {
+            transform: scale(1.05);
+            background: #7dd3fc;
+        }
+
+        .error-box {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid var(--danger);
+            border-radius: 12px;
+            color: #fca5a5;
+            font-size: 1.05rem;
+            display: none;
+            line-height: 1.6;
+        }
+
+        #toast {
+            position: fixed;
+            top: 13vh;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--success);
+            color: #020617;
+            padding: 14px 36px;
+            border-radius: 50px;
+            font-size: 1.6rem;
+            font-weight: bold;
+            z-index: 9500;
+            display: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        }
+
+
+        /* شاشة ملفات الجهاز (أفلام ومسلسلات) والتحكم بالبرامج */
+        #screen-media.active {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2vh;
+        }
+
+        .media-top-toolbar {
+            height: 12%;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 0.9vw;
+        }
+
+        .media-body-grid {
+            height: 88%;
+            display: grid;
+            grid-template-columns: 1.35fr 1fr;
+            gap: 1.2vw;
+            overflow: hidden;
+        }
+
+        .media-player-card {
+            background: #020617;
+            border: 2px solid var(--primary);
+            border-radius: 16px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .media-player-card.theater-mode {
+            position: fixed;
+            inset: 0;
+            z-index: 9800;
+            border-radius: 0;
+            border: none;
+            background: #000;
+            padding: 16px;
+        }
+
+        #local-media-player {
+            width: 100%;
+            flex: 1;
+            min-height: 0;
+            border-radius: 12px;
+            background: #000;
+            object-fit: contain;
+        }
+
+        .media-controls-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.8vw;
+            margin-top: 10px;
+            height: 62px;
+        }
+
+        .media-side-panel {
+            background: #020617;
+            border: 2px solid #1e293b;
+            border-radius: 16px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+        }
+
+        .media-playlist {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 44%;
+            overflow-y: auto;
+        }
+
+        .apps-launch-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        @media (orientation: portrait) {
+            .grid-main, .grid-devices, .grid-internet {
+                grid-template-columns: repeat(2, 1fr);
+                grid-template-rows: repeat(4, 1fr);
+            }
+            .grid-needs {
+                grid-template-columns: repeat(2, 1fr);
+                grid-template-rows: repeat(4, 1fr);
+            }
+            footer {
+                grid-template-columns: repeat(3, 1fr);
+                height: 16vh;
+            }
+            main {
+                height: 73vh;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="calibration-overlay">
+        <div class="cal-card">
+            <h1 style="font-size: 2.3rem; color: var(--primary); margin-bottom: 12px;">نظام التواصل والتحكم الذكي بالرأس</h1>
+            <p style="font-size: 1.2rem; color: var(--text-muted); line-height: 1.7;">
+                تحكم كامل بالجهاز، الأصوات المرفقة محلياً، الرسائل، وتصفح الإنترنت عبر حركة الرأس أو الماوس.<br>
+                ضع وجهك أمام الكاميرا، حرّك رأسك لتوجيه المؤشر، وثبّت النظر على أي زر لمدة <strong style="color:var(--primary)">1.4 ثانية</strong> لتفعيله.
+            </p>
+            <p id="loading-status" style="margin-top: 20px; color: var(--success); font-size: 1.25rem; font-weight: bold;">
+                ✅ جاهز للعمل بدون إنترنت (ملفات الصوت المرفقة، الكاميرا، الطوارئ، والأجهزة)
+            </p>
+            <div id="error-box" class="error-box"></div>
+            <button id="start-btn" class="cal-btn" style="display: none;" onclick="startSystem()">🚀 ابدأ النظام الآن</button>
+        </div>
+    </div>
+
+    <div id="head-cursor">
+        <svg class="progress-ring" width="50" height="50">
+            <circle class="progress-ring__circle" />
+        </svg>
+        <div class="cursor-dot"></div>
+    </div>
+
+    <div id="toast"></div>
+
+    <header>
+        <div class="status-info">
+            <video id="camera-preview" autoplay playsinline muted></video>
+            <div>
+                <div class="clock" id="clock">00:00</div>
+                <span id="tracking-status" class="tracking-badge">في انتظار الكاميرا</span>
+            </div>
+        </div>
+
+        <div class="top-controls">
+            <button class="gaze-btn" id="voice-gender-btn" onclick="toggleVoiceGender()" style="padding: 0 16px; flex-direction: row; gap: 8px;">
+                <span style="font-size: 1.4rem;">🎙️</span>
+                <span style="font-weight: bold;" id="voice-gender-label">الصوت: أنثى</span>
+            </button>
+            <button class="gaze-btn" id="hover-click-toggle-btn" onclick="togglePageClickMode('manual')" title="وجّه الماوس لتبديل خاصية النقر">
+                <span class="hover-status-dot"></span>
+                <span style="font-weight: bold;" id="hover-click-label">النقر: مفعّل</span>
+            </button>
+            <button class="gaze-btn" id="mute-toggle-btn" onclick="toggleMuteAudio()" style="padding: 0 16px; flex-direction: row; gap: 8px;">
+                <span style="font-size: 1.4rem;" id="mute-icon">🔊</span>
+                <span style="font-weight: bold;" id="mute-label">الصوت مفتوح</span>
+            </button>
+            <button class="gaze-btn" onclick="recenterHead()" style="padding: 0 16px; flex-direction: row; gap: 8px;">
+                <span style="font-size: 1.4rem;">🎯</span>
+                <span style="font-weight: bold;">توسيط الرأس</span>
+            </button>
+            <button class="gaze-btn" onclick="speakText(document.getElementById('typed-text').innerText || 'أهلاً، أحتاج للمساعدة')" style="padding: 0 16px; flex-direction: row; gap: 8px;">
+                <span style="font-size: 1.4rem;">📢</span>
+                <span style="font-weight: bold;">نطق النص</span>
+            </button>
+            <button class="gaze-btn btn-emergency" onclick="triggerEmergency()">
+                <span>🚨</span>
+                <span>نداء طوارئ</span>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <div id="screen-home" class="screen grid-main active">
+            <button class="gaze-btn" onclick="switchScreen('screen-needs')">
+                <div class="icon">🗣️</div>
+                <div class="label">احتياجاتي الفورية</div>
+                <div class="sub-label">عبارات نطق سريعة</div>
+            </button>
+            <button class="gaze-btn" onclick="switchScreen('screen-keyboard')">
+                <div class="icon">⌨️</div>
+                <div class="label">كتابة ونطق جملة</div>
+                <div class="sub-label">لوحة مفاتيح + إرسال واتساب</div>
+            </button>
+            <button class="gaze-btn" onclick="switchScreen('screen-media')">
+                <div class="icon">🎬</div>
+                <div class="label">ملفات الجهاز والبرامج</div>
+                <div class="sub-label">أفلام، مسلسلات، فتح وإغلاق برامج</div>
+            </button>
+            <button class="gaze-btn" onclick="switchScreen('screen-internet')">
+                <div class="icon">🌐</div>
+                <div class="label">الدخول للإنترنت</div>
+                <div class="sub-label">يوتيوب، بحث، أخبار، قرآن</div>
+            </button>
+            <button class="gaze-btn" onclick="switchScreen('screen-comm')">
+                <div class="icon">📱</div>
+                <div class="label">التواصل والرسائل</div>
+                <div class="sub-label">واتساب، اتصال، نداء الأهل</div>
+            </button>
+            <button class="gaze-btn" onclick="speakText('نعم، أنا موافق')">
+                <div class="icon">✅</div>
+                <div class="label">نعم</div>
+                <div class="sub-label">صوت فوري</div>
+            </button>
+            <button class="gaze-btn" onclick="speakText('لا، شكراً')">
+                <div class="icon">❌</div>
+                <div class="label">لا</div>
+                <div class="sub-label">صوت فوري</div>
+            </button>
+            <button class="gaze-btn" onclick="switchScreen('screen-devices')">
+                <div class="icon">🏠</div>
+                <div class="label">التحكم بالغرفة</div>
+                <div class="sub-label">إضاءة، مكيف، سرير، تلفاز</div>
+            </button>
+            <button class="gaze-btn" onclick="switchScreen('screen-settings')">
+                <div class="icon">⚙️</div>
+                <div class="label">إعدادات المؤشر</div>
+                <div class="sub-label">السرعة، وقت التحديق، الصوت</div>
+            </button>
+        </div>
+
+        <div id="screen-needs" class="screen grid-needs">
+            <button class="gaze-btn" onclick="speakText('أشعر بألم، أرجو المساعدة فوراً')">
+                <div class="icon">🤕</div>
+                <div class="label">أشعر بألم</div>
+            </button>
+            <button class="gaze-btn" onclick="speakText('أريد شرب الماء من فضلك')">
+                <div class="icon">💧</div>
+                <div class="label">أريد ماء</div>
+            </button>
+            <button class="gaze-btn" onclick="speakText('أشعر بالجوع وأريد الطعام')">
+                <div class="icon">🍽️</div>
+                <div class="label">أريد طعام</div>
+            </button>
+            <button class="gaze-btn" onclick="speakText('أحتاج للذهاب إلى الحمام')">
+                <div class="icon">🚻</div>
+                <div class="label">الحمام</div>
+            </button>
+            <button class="gaze-btn" onclick="speakText('أرجو تعديل وضعية جلوسي أو السرير')">
+                <div class="icon">🛏️</div>
+                <div class="label">تعديل الوضعية</div>
+            </button>
+            <button class="gaze-btn" onclick="speakText('أشعر بالبرد، أريد غطاء')">
+                <div class="icon">🥶</div>
+                <div class="label">أشعر بالبرد</div>
+            </button>
+            <button class="gaze-btn" onclick="speakText('أشعر بالحر الشديد، شغلوا المكيف')">
+                <div class="icon">🥵</div>
+                <div class="label">أشعر بالحر</div>
+            </button>
+            <button class="gaze-btn" onclick="speakText('أشعر بالنعاس وأريد النوم')">
+                <div class="icon">😴</div>
+                <div class="label">أريد النوم</div>
+            </button>
+        </div>
+
+        <div id="screen-keyboard" class="screen">
+            <div class="text-display-bar">
+                <span id="typed-text"></span>
+                <span style="color: var(--text-muted); font-size: 1rem;">| اكتب بالتحديق</span>
+            </div>
+            <div class="quick-phrases-bar">
+                <button class="gaze-btn phrase-btn" onclick="appendPhrase('السلام عليكم ')">السلام عليكم</button>
+                <button class="gaze-btn phrase-btn" onclick="appendPhrase('كيف حالكم؟ ')">كيف حالكم؟</button>
+                <button class="gaze-btn phrase-btn" onclick="appendPhrase('الحمد لله بخير ')">الحمد لله بخير</button>
+                <button class="gaze-btn phrase-btn" onclick="appendPhrase('أحتاج إلى مساعدة ')">أحتاج مساعدة</button>
+                <button class="gaze-btn phrase-btn" style="background: rgba(37, 211, 102, 0.2); border-color: var(--whatsapp);" onclick="sendWhatsAppMessage()">📲 إرسال واتساب</button>
+            </div>
+            <div class="keyboard-grid" id="keyboard-container"></div>
+        </div>
+
+        <div id="screen-internet" class="screen grid-internet">
+            <button class="gaze-btn" onclick="openWebExternal('https://www.google.com', 'بحث جوجل')">
+                <div class="icon">🔍</div>
+                <div class="label">بحث جوجل</div>
+                <div class="sub-label">تصفح الإنترنت بحرية</div>
+            </button>
+            <button class="gaze-btn" onclick="openWebExternal('https://www.youtube.com', 'يوتيوب')">
+                <div class="icon">▶️</div>
+                <div class="label">يوتيوب (YouTube)</div>
+                <div class="sub-label">مقاطع فيديو وبرامج</div>
+            </button>
+            <button class="gaze-btn" onclick="openEmbeddedBrowser('https://ar.wikipedia.org/wiki/الصفحة_الرئيسية', 'موسوعة ويكيبيديا')">
+                <div class="icon">📚</div>
+                <div class="label">الموسوعة العربية</div>
+                <div class="sub-label">قراءة داخل النظام</div>
+            </button>
+            <button class="gaze-btn" onclick="openEmbeddedBrowser('https://quran.com/ar', 'القرآن الكريم')">
+                <div class="icon">📖</div>
+                <div class="label">القرآن الكريم</div>
+                <div class="sub-label">قراءة واستماع مباشر</div>
+            </button>
+            <button class="gaze-btn" onclick="searchTypedTextOnGoogle()">
+                <div class="icon">🔎</div>
+                <div class="label">ابحث عن النص المكتوب</div>
+                <div class="sub-label">يبحث عما كتبته في لوحة المفاتيح</div>
+            </button>
+            <button class="gaze-btn" onclick="toggleAudio()">
+                <div class="icon">📻</div>
+                <div class="label">إذاعة القرآن المباشرة</div>
+                <div class="sub-label">تشغيل / إيقاف الصوت</div>
+            </button>
+        </div>
+
+        <div id="screen-browser" class="screen">
+            <div class="browser-toolbar">
+                <button class="gaze-btn" onclick="switchScreen('screen-internet')">🔙 رجوع للإنترنت</button>
+                <button class="gaze-btn" onclick="scrollIframe(-250)">⬆️ تمرير لأعلى</button>
+                <button class="gaze-btn" onclick="scrollIframe(250)">⬇️ تمرير لأسفل</button>
+                <button class="gaze-btn" onclick="loadIframeUrl('https://quran.com/ar')">📖 القرآن</button>
+                <button class="gaze-btn" onclick="loadIframeUrl('https://ar.wikipedia.org/wiki/الصفحة_الرئيسية')">📚 ويكيبيديا</button>
+                <button class="gaze-btn" onclick="openCurrentInNewTab()">↗️ فتح بنافذة كاملة</button>
+            </div>
+            <div class="browser-frame-container">
+                <iframe id="web-viewer" src="about:blank" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+            </div>
+        </div>
+
+        <div id="screen-comm" class="screen">
+            <div class="comm-panel">
+                <h2 style="color: var(--primary); text-align: center;">💬 إرسال رسائل فورية عبر واتساب</h2>
+                <div class="comm-grid">
+                    <button class="gaze-btn" style="border-color: var(--whatsapp);" onclick="sendQuickWhatsApp('السلام عليكم، أرجو الحضور إليّ الآن')">
+                        <div class="icon">👋</div>
+                        <div class="label">تعال إليّ الآن</div>
+                    </button>
+                    <button class="gaze-btn" style="border-color: var(--whatsapp);" onclick="sendQuickWhatsApp('أنا بخير والحمد لله، لا تقلقوا')">
+                        <div class="icon">💚</div>
+                        <div class="label">أنا بخير</div>
+                    </button>
+                    <button class="gaze-btn" style="border-color: var(--whatsapp);" onclick="sendQuickWhatsApp('أحتاج إلى دوائي في الموعد')">
+                        <div class="icon">💊</div>
+                        <div class="label">موعد الدواء</div>
+                    </button>
+                    <button class="gaze-btn" style="border-color: var(--whatsapp);" onclick="sendWhatsAppMessage()">
+                        <div class="icon">✍️</div>
+                        <div class="label">إرسال النص المكتوب</div>
+                    </button>
+                </div>
+            </div>
+
+            <div class="comm-panel">
+                <h2 style="color: var(--warning); text-align: center;">📢 نداءات صوتية وتطبيقات التواصل</h2>
+                <div class="comm-grid">
+                    <button class="gaze-btn" onclick="speakText('يا أهل البيت، أريد التحدث معكم من فضلكم')">
+                        <div class="icon">👨‍👩‍👧‍👦</div>
+                        <div class="label">نداء العائلة</div>
+                    </button>
+                    <button class="gaze-btn" onclick="speakText('أرجو الاتصال بالطبيب أو الممرض')">
+                        <div class="icon">🩺</div>
+                        <div class="label">طلب الطبيب</div>
+                    </button>
+                    <button class="gaze-btn" onclick="openWebExternal('https://web.whatsapp.com', 'واتساب ويب')">
+                        <div class="icon">🌐</div>
+                        <div class="label">فتح واتساب ويب</div>
+                    </button>
+                    <button class="gaze-btn" onclick="openWebExternal('https://web.telegram.org', 'تيليجرام')">
+                        <div class="icon">✈️</div>
+                        <div class="label">فتح تيليجرام</div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-devices" class="screen grid-devices">
+            <button class="gaze-btn" id="dev-light" onclick="toggleDevice('dev-light', 'إضاءة الغرفة')">
+                <div class="icon">💡</div>
+                <div class="label">إضاءة الغرفة</div>
+            </button>
+            <button class="gaze-btn" id="dev-ac" onclick="toggleDevice('dev-ac', 'المكيف')">
+                <div class="icon">❄️</div>
+                <div class="label">المكيف</div>
+            </button>
+            <button class="gaze-btn" id="dev-tv" onclick="toggleDevice('dev-tv', 'التلفاز')">
+                <div class="icon">📺</div>
+                <div class="label">التلفاز</div>
+            </button>
+            <button class="gaze-btn" id="dev-curtain" onclick="toggleDevice('dev-curtain', 'الستائر')">
+                <div class="icon">🪟</div>
+                <div class="label">الستائر</div>
+            </button>
+            <button class="gaze-btn" id="dev-bed" onclick="toggleDevice('dev-bed', 'رفع السرير')">
+                <div class="icon">🛌</div>
+                <div class="label">رفع السرير</div>
+            </button>
+            <button class="gaze-btn" id="dev-door" onclick="toggleDevice('dev-door', 'فتح الباب')">
+                <div class="icon">🚪</div>
+                <div class="label">الباب</div>
+            </button>
+        </div>
+
+                <div id="screen-media" class="screen">
+            <div class="media-top-toolbar">
+                <button class="gaze-btn" onclick="loadDrivesAndFolders('')">💻 الأقراص (C, D, E...)</button>
+                <button class="gaze-btn" onclick="navigateParentFolder()">⬆️ مجلد لأعلى</button>
+                <button class="gaze-btn" onclick="pickLocalMediaFiles()">📂 استعراض من المتصفح</button>
+                <button class="gaze-btn" id="theater-toggle-btn" onclick="toggleTheaterMode()">🖥️ شاشة كاملة آمنة</button>
+                <button class="gaze-btn" onclick="exitTheaterMode()">↙️ وضع الشاشة العادي</button>
+                <button class="gaze-btn" onclick="switchScreen('screen-home')">🏠 الرئيسية</button>
+            </div>
+
+            <input type="file" id="local-media-input" accept="video/*,audio/*,.mp4,.mkv,.avi,.mov,.webm,.m4v,.mp3,.wav" multiple style="display:none;" onchange="handleLocalMediaSelected(event)" />
+
+            <div class="media-body-grid">
+                <div class="media-player-card" id="media-player-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:10px;">
+                        <span id="now-playing-title" style="font-size:1.1rem; font-weight:bold; color:var(--primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">اختر قرصاً أو مجلداً من اليمين لتصفح الأفلام والمسلسلات</span>
+                        <button class="gaze-btn" onclick="exitTheaterMode()" style="padding:8px 16px; flex-direction:row; gap:6px; background:#b91c1c; border-color:#f87171; flex-shrink:0;">
+                            <span>↙️</span>
+                            <span>إعادة للوضع العادي</span>
+                        </button>
+                    </div>
+                    <video id="local-media-player" controls playsinline></video>
+                    <div class="media-controls-row">
+                        <button class="gaze-btn" onclick="seekMedia(-15)">⏪ -15ث</button>
+                        <button class="gaze-btn" onclick="togglePlayPauseMedia()">⏯️ تشغيل/إيقاف</button>
+                        <button class="gaze-btn" onclick="seekMedia(15)">⏩ +15ث</button>
+                        <button class="gaze-btn" onclick="toggleTheaterMode()">🖥️ تكبير آمن</button>
+                        <button class="gaze-btn" onclick="exitTheaterMode()">↙️ شاشة عادية</button>
+                    </div>
+                </div>
+
+                <div class="media-side-panel">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span id="current-folder-label" style="font-weight:bold; color:var(--success); font-size:1rem;">💽 الأقراص والمجلدات في الجهاز</span>
+                        <button class="gaze-btn" onclick="loadDrivesAndFolders(currentBrowsePath)" style="padding:5px 10px; font-size:0.85rem;">🔄 تحديث</button>
+                    </div>
+                    <div class="media-playlist" id="media-playlist">
+                        <div style="color:var(--text-muted); font-size:0.95rem; padding:10px;">جاري تحميل الأقراص الافتراضية والملفات...</div>
+                    </div>
+
+                    <div style="font-weight:bold; color:var(--warning); font-size:1rem; margin-top:4px;">🧩 فتح وإغلاق البرامج</div>
+                    <div class="apps-launch-grid">
+                        <button class="gaze-btn" onclick="launchSystemApp('explorer.exe', 'مستكشف الملفات')" style="padding:9px;">📁 مستكشف ويندوز</button>
+                        <button class="gaze-btn" onclick="launchSystemApp('calc.exe', 'الآلة الحاسبة')" style="padding:9px;">🧮 الآلة الحاسبة</button>
+                        <button class="gaze-btn" onclick="launchSystemApp('mspaint.exe', 'الرسام')" style="padding:9px;">🎨 الرسام</button>
+                        <button class="gaze-btn" onclick="closeSystemApp()" style="padding:9px; border-color:var(--danger); color:#fca5a5;">✖ إغلاق البرنامج النشط</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-settings" class="screen grid-devices">
+            <button class="gaze-btn" onclick="adjustSensitivity(0.4)">
+                <div class="icon">🐢</div>
+                <div class="label">تبطيء حركة المؤشر</div>
+                <div class="sub-label">لدقة أعلى</div>
+            </button>
+            <button class="gaze-btn" onclick="adjustSensitivity(-0.4)">
+                <div class="icon">🐇</div>
+                <div class="label">تسريع حركة المؤشر</div>
+                <div class="sub-label">لحركة رأس أقل</div>
+            </button>
+            <button class="gaze-btn" onclick="adjustDwellTime(-250)">
+                <div class="icon">⚡</div>
+                <div class="label">نقر أسرع (-0.25 ثانية)</div>
+                <div class="sub-label" id="dwell-label">الوقت الحالي: 1.4 ثانية</div>
+            </button>
+            <button class="gaze-btn" onclick="adjustDwellTime(250)">
+                <div class="icon">⏳</div>
+                <div class="label">نقر أبطأ (+0.25 ثانية)</div>
+                <div class="sub-label">لتجنب النقر بالخطأ</div>
+            </button>
+            <button class="gaze-btn" onclick="recenterHead()">
+                <div class="icon">🎯</div>
+                <div class="label">إعادة توسيط الرأس</div>
+                <div class="sub-label">ضبط نقطة المنتصف</div>
+            </button>
+            <button class="gaze-btn" onclick="speakText('تجربة الصوت، النظام يعمل بنجاح وبوضوح تام')">
+                <div class="icon">🔈</div>
+                <div class="label">اختبار الصوت العربي</div>
+                <div class="sub-label">التأكد من السماعات</div>
+            </button>
+        </div>
+    </main>
+
+    <footer>
+        <button class="gaze-btn nav-btn current-tab" id="nav-screen-home" onclick="switchScreen('screen-home')">🏠 الرئيسية</button>
+        <button class="gaze-btn nav-btn" id="nav-screen-needs" onclick="switchScreen('screen-needs')">🗣️ احتياجاتي</button>
+        <button class="gaze-btn nav-btn" id="nav-screen-keyboard" onclick="switchScreen('screen-keyboard')">⌨️ كتابة</button>
+        <button class="gaze-btn nav-btn" id="nav-screen-internet" onclick="switchScreen('screen-internet')">🌐 الإنترنت</button>
+        <button class="gaze-btn nav-btn" id="nav-screen-comm" onclick="switchScreen('screen-comm')">📱 التواصل</button>
+        <button class="gaze-btn nav-btn" id="nav-screen-media" onclick="switchScreen('screen-media')">🎬 الملفات والفيديو</button>
+        <button class="gaze-btn nav-btn" id="nav-screen-devices" onclick="switchScreen('screen-devices')">🔌 الأجهزة</button>
+    </footer>
+
+    <script>
+        let screenWidth = window.innerWidth;
+        let screenHeight = window.innerHeight;
+        let centerNose = { x: 0.5, y: 0.5 };
+        let isCalibrated = false;
+        let sensitivityX = 2.8;
+        let sensitivityY = 3.2;
+        let currentX = screenWidth / 2;
+        let currentY = screenHeight / 2;
+        const smoothingFactor = 0.22;
+
+        let DWELL_TIME = 1400; 
+        let hoveredElement = null;
+        let hoverStartTime = 0;
+        let isAlarmPlaying = false;
+        let alarmInterval = null;
+        let headTrackingActive = false;
+
+        const cursor = document.getElementById('head-cursor');
+        const progressCircle = document.querySelector('.progress-ring__circle');
+        const circumference = 2 * Math.PI * 21;
+        progressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
+
+        function adaptToScreen() {
+            screenWidth = window.innerWidth;
+            screenHeight = window.innerHeight;
+            const aspect = screenWidth / screenHeight;
+            if (aspect < 1) {
+                sensitivityX = 3.5;
+                sensitivityY = 2.5;
+            } else {
+                sensitivityX = 2.8;
+                sensitivityY = 3.2;
+            }
+        }
+        window.addEventListener('resize', adaptToScreen);
+        adaptToScreen();
+
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+        }, 1000);
+
+        // ================= تتبع الرأس محلياً عبر الكاميرا دون إنترنت =================
+        const videoElement = document.getElementById('camera-preview');
+        let latestNose = { x: 0.5, y: 0.5 };
+        let prevFrameData = null;
+        let motionCanvas = null;
+        let motionCtx = null;
+        let cameraStream = null;
+        let trackingInterval = null;
+
+        function initAI() {
+            const statusEl = document.getElementById('loading-status');
+            const startBtn = document.getElementById('start-btn');
+            motionCanvas = document.createElement('canvas');
+            motionCanvas.width = 64;
+            motionCanvas.height = 48;
+            motionCtx = motionCanvas.getContext('2d', { willReadFrequently: true });
+
+            statusEl.innerText = "✅ جاهز للعمل بدون إنترنت (ملفات الصوت المرفقة، الكاميرا، الطوارئ، والأجهزة)";
+            statusEl.style.color = "var(--success)";
+            startBtn.style.display = "inline-block";
+            startBtn.innerText = "🚀 ابدأ النظام الآن";
+        }
+
+        function detectHeadFromCamera() {
+            if (!cameraStream || videoElement.readyState < 2 || !motionCtx) return false;
+            motionCtx.save();
+            motionCtx.scale(-1, 1);
+            motionCtx.drawImage(videoElement, -motionCanvas.width, 0, motionCanvas.width, motionCanvas.height);
+            motionCtx.restore();
+
+            const frame = motionCtx.getImageData(0, 0, motionCanvas.width, motionCanvas.height).data;
+            if (!prevFrameData) {
+                prevFrameData = new Uint8ClampedArray(frame);
+                return false;
+            }
+
+            let sumX = 0;
+            let sumY = 0;
+            let totalWeight = 0;
+
+            for (let y = 4; y < motionCanvas.height - 4; y++) {
+                for (let x = 4; x < motionCanvas.width - 4; x++) {
+                    const idx = (y * motionCanvas.width + x) * 4;
+                    const diff = Math.abs(frame[idx] - prevFrameData[idx]) +
+                                 Math.abs(frame[idx + 1] - prevFrameData[idx + 1]) +
+                                 Math.abs(frame[idx + 2] - prevFrameData[idx + 2]);
+
+                    const edgeFactor = (x < 10 || x > motionCanvas.width - 10) ? 0.35 : 1.0;
+                    if (diff > 36) {
+                        const w = diff * edgeFactor;
+                        sumX += (x / motionCanvas.width) * w;
+                        sumY += (y / motionCanvas.height) * w;
+                        totalWeight += w;
+                    }
+                }
+            }
+
+            prevFrameData.set(frame);
+
+            if (totalWeight > 3500) {
+                const rawX = sumX / totalWeight;
+                const rawY = sumY / totalWeight;
+                latestNose = {
+                    x: latestNose.x * 0.65 + rawX * 0.35,
+                    y: latestNose.y * 0.65 + rawY * 0.35
+                };
+                if (!isCalibrated) {
+                    centerNose = { ...latestNose };
+                    isCalibrated = true;
+                }
+                return true;
+            }
+            return false;
+        }
+
+        function updateTrackingBadge(detected, modeLabel = "") {
+            const badge = document.getElementById('tracking-status');
+            if (modeLabel) {
+                badge.innerText = modeLabel;
+                badge.style.color = "var(--warning)";
+                badge.style.borderColor = "var(--warning)";
+                badge.style.background = "rgba(245, 158, 11, 0.2)";
+                return;
+            }
+            if (detected) {
+                badge.innerText = "🟢 تتبع الرأس نشط (أوفلاين)";
+                badge.style.color = "var(--success)";
+                badge.style.borderColor = "var(--success)";
+                badge.style.background = "rgba(34, 197, 94, 0.2)";
+            } else {
+                badge.innerText = "🟡 حرّك رأسك أمام الكاميرا";
+                badge.style.color = "var(--warning)";
+                badge.style.borderColor = "var(--warning)";
+                badge.style.background = "rgba(245, 158, 11, 0.2)";
+            }
+        }
+
+        window.addEventListener('load', () => {
+            buildKeyboard();
+            initAI();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!headTrackingActive) {
+                currentX = e.clientX;
+                currentY = e.clientY;
+                cursor.style.left = `${currentX}px`;
+                cursor.style.top = `${currentY}px`;
+            }
+        });
+
+        async function startCameraOffline() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                updateTrackingBadge(false, "🟡 وضع الماوس / اللمس (أوفلاين)");
+                return;
+            }
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: 320 }, height: { ideal: 240 }, facingMode: "user" },
+                    audio: false
+                });
+                videoElement.srcObject = cameraStream;
+                await videoElement.play();
+                headTrackingActive = true;
+                updateTrackingBadge(false);
+
+                clearInterval(trackingInterval);
+                trackingInterval = setInterval(() => {
+                    const moved = detectHeadFromCamera();
+                    if (moved) {
+                        updateTrackingBadge(true);
+                        updateCursorFromHead(latestNose);
+                    } else {
+                        updateTrackingBadge(false);
+                    }
+                }, 40);
+            } catch (e) {
+                headTrackingActive = false;
+                updateTrackingBadge(false, "🟡 الكاميرا غير متاحة — وضع الماوس نشط");
+                showToast("الكاميرا غير متاحة؛ يمكنك التحكم بالماوس أو اللمس بدون إنترنت");
+            }
+        }
+
+        async function startSystem() {
+            document.getElementById('calibration-overlay').style.display = 'none';
+            buildKeyboard();
+            requestAnimationFrame(dwellLoop);
+            await startCameraOffline();
+            speakText("تم تفعيل النظام بدون إنترنت، أهلاً بك");
+        }
+
+        function recenterHead() {
+            centerNose = { ...latestNose };
+            showToast("🎯 تم توسيط نقطة الرأس بنجاح");
+        }
+
+        function adjustSensitivity(delta) {
+            sensitivityX = Math.max(1.2, Math.min(5.5, sensitivityX - delta));
+            sensitivityY = Math.max(1.2, Math.min(5.5, sensitivityY - delta));
+            showToast(`تم تعديل سرعة المؤشر (${sensitivityX.toFixed(1)})`);
+        }
+
+        function adjustDwellTime(delta) {
+            DWELL_TIME = Math.max(600, Math.min(3000, DWELL_TIME + delta));
+            const sec = (DWELL_TIME / 1000).toFixed(2);
+            document.getElementById('dwell-label').innerText = `الوقت الحالي: ${sec} ثانية`;
+            showToast(`وقت التحديق للنقر: ${sec} ثانية`);
+        }
+
+        function updateCursorFromHead(nose) {
+            const deltaX = (nose.x - centerNose.x) * sensitivityX;
+            const deltaY = (nose.y - centerNose.y) * sensitivityY;
+
+            let targetX = (0.5 + deltaX) * screenWidth;
+            let targetY = (0.5 + deltaY) * screenHeight;
+
+            targetX = Math.max(15, Math.min(screenWidth - 15, targetX));
+            targetY = Math.max(15, Math.min(screenHeight - 15, targetY));
+
+            currentX += (targetX - currentX) * smoothingFactor;
+            currentY += (targetY - currentY) * smoothingFactor;
+
+            cursor.style.left = `${currentX}px`;
+            cursor.style.top = `${currentY}px`;
+        }
+
+        function dwellLoop(timestamp) {
+            cursor.style.display = 'none';
+            const elemBelow = document.elementFromPoint(currentX, currentY);
+            cursor.style.display = 'flex';
+
+            const btn = elemBelow ? elemBelow.closest('.gaze-btn') : null;
+
+            if (btn) {
+                if (hoveredElement !== btn) {
+                    if (hoveredElement) hoveredElement.classList.remove('hovered');
+                    hoveredElement = btn;
+                    hoveredElement.classList.add('hovered');
+                    hoverStartTime = timestamp;
+                } else {
+                    const elapsed = timestamp - hoverStartTime;
+                    const progress = Math.min(elapsed / DWELL_TIME, 1);
+                    const offset = circumference - progress * circumference;
+                    progressCircle.style.strokeDashoffset = offset;
+
+                    if (progress >= 1) {
+                        btn.click();
+                        hoverStartTime = timestamp + 850;
+                        progressCircle.style.strokeDashoffset = circumference;
+                    }
+                }
+            } else {
+                if (hoveredElement) {
+                    hoveredElement.classList.remove('hovered');
+                    hoveredElement = null;
+                }
+                progressCircle.style.strokeDashoffset = circumference;
+            }
+
+            requestAnimationFrame(dwellLoop);
+        }
+
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            const target = document.getElementById(screenId);
+            if (target) target.classList.add('active');
+
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('current-tab'));
+            const navBtn = document.getElementById('nav-' + screenId);
+            if (navBtn) navBtn.classList.add('current-tab');
+        }
+
+        // ================= إدارة النسخة الواحدة وإغلاق النسخة السابقة عند فتح الصفحة مجدداً =================
+        const INSTANCE_ID = 'assistive_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+        const INSTANCE_CHANNEL = ('BroadcastChannel' in window) ? new BroadcastChannel('assistive_os_pro_channel') : null;
+
+        function claimSingleInstance() {
+            try {
+                localStorage.setItem('assistive_os_active_instance', JSON.stringify({ id: INSTANCE_ID, ts: Date.now() }));
+            } catch (e) {}
+            if (INSTANCE_CHANNEL) {
+                INSTANCE_CHANNEL.postMessage({ type: 'CLOSE_PREVIOUS', senderId: INSTANCE_ID });
+                INSTANCE_CHANNEL.onmessage = (ev) => {
+                    if (ev.data && ev.data.type === 'CLOSE_PREVIOUS' && ev.data.senderId !== INSTANCE_ID) {
+                        stopAllMediaAndCloseSelf();
+                    }
+                };
+            }
+            window.addEventListener('storage', (ev) => {
+                if (ev.key === 'assistive_os_active_instance' && ev.newValue) {
+                    try {
+                        const parsed = JSON.parse(ev.newValue);
+                        if (parsed.id && parsed.id !== INSTANCE_ID) {
+                            stopAllMediaAndCloseSelf();
+                        }
+                    } catch (e) {}
+                }
+            });
+        }
+
+        function stopAllMediaAndCloseSelf() {
+            try {
+                if (activeLocalAudio) { activeLocalAudio.pause(); }
+                if (offlineChimeTimer) { clearInterval(offlineChimeTimer); }
+                if (alarmInterval) { clearInterval(alarmInterval); }
+                if (trackingInterval) { clearInterval(trackingInterval); }
+                if (cameraStream && cameraStream.getTracks) {
+                    cameraStream.getTracks().forEach(t => t.stop());
+                }
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                }
+                window.close();
+            } catch (e) {}
+        }
+
+        claimSingleInstance();
+
+        // ================= تشغيل الملفات الصوتية المرفقة محلياً + خيار (أنثى / رجل) + كتم الصوت =================
+        const LOCAL_SOUND_FILES = {
+            "تم تفعيل النظام بدون إنترنت، أهلاً بك": "sounds/welcome.wav",
+            "أهلاً، أحتاج للمساعدة": "sounds/help_default.wav",
+            "نعم، أنا موافق": "sounds/yes.wav",
+            "لا، شكراً": "sounds/no.wav",
+            "أشعر بألم، أرجو المساعدة فوراً": "sounds/pain.wav",
+            "أريد شرب الماء من فضلك": "sounds/water.wav",
+            "أشعر بالجوع وأريد الطعام": "sounds/food.wav",
+            "أحتاج للذهاب إلى الحمام": "sounds/bathroom.wav",
+            "أرجو تعديل وضعية جلوسي أو السرير": "sounds/position.wav",
+            "أشعر بالبرد، أريد غطاء": "sounds/cold.wav",
+            "أشعر بالحر الشديد، شغلوا المكيف": "sounds/hot.wav",
+            "أشعر بالنعاس وأريد النوم": "sounds/sleep.wav",
+            "السلام عليكم": "sounds/salam.wav",
+            "كيف حالكم؟": "sounds/how_are_you.wav",
+            "الحمد لله بخير": "sounds/alhamdulillah.wav",
+            "أحتاج إلى مساعدة": "sounds/need_help.wav",
+            "يا أهل البيت، أريد التحدث معكم من فضلكم": "sounds/call_family.wav",
+            "أرجو الاتصال بالطبيب أو الممرض": "sounds/call_doctor.wav",
+            "حالة طوارئ! أرجو الحضور فوراً": "sounds/emergency.wav",
+            "تجربة الصوت، النظام يعمل بنجاح وبوضوح تام": "sounds/test_voice.wav",
+            "تم تشغيل إضاءة الغرفة": "sounds/dev_light_on.wav",
+            "تم إيقاف إضاءة الغرفة": "sounds/dev_light_off.wav",
+            "تم تشغيل المكيف": "sounds/dev_ac_on.wav",
+            "تم إيقاف المكيف": "sounds/dev_ac_off.wav",
+            "تم تشغيل التلفاز": "sounds/dev_tv_on.wav",
+            "تم إيقاف التلفاز": "sounds/dev_tv_off.wav",
+            "تم تشغيل الستائر": "sounds/dev_curtain_on.wav",
+            "تم إيقاف الستائر": "sounds/dev_curtain_off.wav",
+            "تم تشغيل رفع السرير": "sounds/dev_bed_on.wav",
+            "تم إيقاف رفع السرير": "sounds/dev_bed_off.wav",
+            "تم تشغيل فتح الباب": "sounds/dev_door_on.wav",
+            "تم إيقاف فتح الباب": "sounds/dev_door_off.wav",
+            "تم تشغيل الصوت المحلي، يمكنك استخدام قسم الإنترنت للبث المباشر": "sounds/local_audio.wav"
+        };
+        let activeLocalAudio = null;
+        let voiceGender = localStorage.getItem('assistive_voice_gender') || 'female'; // 'female' | 'male'
+        let isAudioMuted = localStorage.getItem('assistive_audio_muted') === 'true';
+
+        function syncAudioButtonsUI() {
+            const gLabel = document.getElementById('voice-gender-label');
+            const mIcon = document.getElementById('mute-icon');
+            const mLabel = document.getElementById('mute-label');
+            const mBtn = document.getElementById('mute-toggle-btn');
+
+            if (gLabel) {
+                gLabel.innerText = voiceGender === 'male' ? 'الصوت: رجل' : 'الصوت: أنثى';
+            }
+            if (mIcon && mLabel && mBtn) {
+                if (isAudioMuted) {
+                    mIcon.innerText = '🔇';
+                    mLabel.innerText = 'الصوت مكتوم';
+                    mBtn.classList.add('active-state');
+                } else {
+                    mIcon.innerText = '🔊';
+                    mLabel.innerText = 'الصوت مفتوح';
+                    mBtn.classList.remove('active-state');
+                }
+            }
+        }
+
+        function toggleVoiceGender() {
+            voiceGender = (voiceGender === 'female') ? 'male' : 'female';
+            try { localStorage.setItem('assistive_voice_gender', voiceGender); } catch (e) {}
+            syncAudioButtonsUI();
+            if (!isAudioMuted) {
+                speakText(voiceGender === 'male' ? 'تم اختيار صوت الرجل' : 'تم اختيار صوت الأنثى');
+            } else {
+                showToast(voiceGender === 'male' ? 'تم اختيار صوت الرجل (الصوت مكتوم حالياً)' : 'تم اختيار صوت الأنثى (الصوت مكتوم حالياً)');
+            }
+        }
+
+        function toggleMuteAudio() {
+            isAudioMuted = !isAudioMuted;
+            try { localStorage.setItem('assistive_audio_muted', String(isAudioMuted)); } catch (e) {}
+            if (isAudioMuted) {
+                if (activeLocalAudio) {
+                    activeLocalAudio.pause();
+                    activeLocalAudio.currentTime = 0;
+                }
+                if ('speechSynthesis' in window) {
+                    try { window.speechSynthesis.cancel(); } catch (e) {}
+                }
+                syncAudioButtonsUI();
+                showToast('🔇 تم كتم الصوت');
+            } else {
+                syncAudioButtonsUI();
+                showToast('🔊 تم فتح الصوت');
+                speakText('تم فتح الصوت');
+            }
+        }
+
+        window.addEventListener('load', syncAudioButtonsUI);
+
+        function playOfflineNotificationTone() {
+            if (isAudioMuted) return;
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                const f1 = voiceGender === 'male' ? 440 : 660;
+                const f2 = voiceGender === 'male' ? 587 : 880;
+                osc.frequency.setValueAtTime(f1, ctx.currentTime);
+                osc.frequency.setValueAtTime(f2, ctx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.12, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.23);
+            } catch (e) {}
+        }
+
+        function playBundledAudioFile(cleanText) {
+            if (isAudioMuted) return true;
+            const filePath = LOCAL_SOUND_FILES[cleanText];
+            if (!filePath) return false;
+            try {
+                if (activeLocalAudio) {
+                    activeLocalAudio.pause();
+                    activeLocalAudio.currentTime = 0;
+                }
+                activeLocalAudio = new Audio(filePath);
+                activeLocalAudio.playbackRate = (voiceGender === 'male') ? 0.90 : 1.08;
+                activeLocalAudio.play().catch(() => {
+                    playOfflineNotificationTone();
+                });
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function speakText(text) {
+            if (!text || !text.trim()) return;
+            const cleanText = text.trim();
+            showToast(cleanText);
+
+            if (isAudioMuted) return;
+
+            const playedFile = playBundledAudioFile(cleanText);
+            if (!playedFile) {
+                playOfflineNotificationTone();
+            }
+
+            if ('speechSynthesis' in window) {
+                try {
+                    window.speechSynthesis.cancel();
+                    const utterance = new SpeechSynthesisUtterance(cleanText);
+                    const voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
+                    const arVoices = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith('ar'));
+                    let selectedVoice = arVoices[0] || null;
+                    if (arVoices.length > 1) {
+                        const maleMatch = arVoices.find(v => /male|hamed|naayf|tariq|salman|رجل|مذكر/i.test(v.name));
+                        const femaleMatch = arVoices.find(v => /female|salma|zeinab|hoda|laila|أنثى|مؤنث/i.test(v.name));
+                        if (voiceGender === 'male' && maleMatch) selectedVoice = maleMatch;
+                        if (voiceGender === 'female' && femaleMatch) selectedVoice = femaleMatch;
+                    }
+                    if (selectedVoice) {
+                        utterance.voice = selectedVoice;
+                    }
+                    utterance.lang = 'ar-SA';
+                    utterance.rate = (voiceGender === 'male') ? 0.90 : 1.02;
+                    utterance.pitch = (voiceGender === 'male') ? 0.80 : 1.18;
+                    window.speechSynthesis.speak(utterance);
+                } catch (e) {}
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.style.display = 'block';
+            clearTimeout(window.toastTimer);
+            window.toastTimer = setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3200);
+        }
+
+        function playBeep() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(880, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.4);
+                gain.gain.setValueAtTime(0.4, ctx.currentTime);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.45);
+            } catch (e) {}
+        }
+
+        function triggerEmergency() {
+            if (!isAlarmPlaying) {
+                isAlarmPlaying = true;
+                playBeep();
+                alarmInterval = setInterval(playBeep, 900);
+                speakText("حالة طوارئ! أرجو الحضور فوراً");
+                document.body.style.backgroundColor = "#450a0a";
+            } else {
+                clearInterval(alarmInterval);
+                isAlarmPlaying = false;
+                document.body.style.backgroundColor = "var(--bg-color)";
+                showToast("تم إيقاف نداء الطوارئ");
+            }
+        }
+
+        function toggleDevice(elementId, deviceName) {
+            const el = document.getElementById(elementId);
+            const isActive = el.classList.toggle('active-state');
+            const statusText = isActive ? `تم تشغيل ${deviceName}` : `تم إيقاف ${deviceName}`;
+            speakText(statusText);
+        }
+
+        let currentBrowserUrl = 'https://ar.wikipedia.org/wiki/الصفحة_الرئيسية';
+
+        function openEmbeddedBrowser(url, title) {
+            currentBrowserUrl = url;
+            document.getElementById('web-viewer').src = url;
+            switchScreen('screen-browser');
+            showToast(`جاري فتح: ${title}`);
+        }
+
+        function loadIframeUrl(url) {
+            currentBrowserUrl = url;
+            document.getElementById('web-viewer').src = url;
+        }
+
+        function scrollIframe(pixels) {
+            try {
+                const iframe = document.getElementById('web-viewer');
+                iframe.contentWindow.scrollBy({ top: pixels, behavior: 'smooth' });
+            } catch (e) {
+                showToast("استخدم زر الفتح بنافذة كاملة للتمرير الحر");
+            }
+        }
+
+        function openCurrentInNewTab() {
+            window.open(currentBrowserUrl, '_blank');
+        }
+
+        function openWebExternal(url, title) {
+            speakText(`جاري فتح ${title}`);
+            window.open(url, '_blank');
+        }
+
+        function searchTypedTextOnGoogle() {
+            const text = document.getElementById('typed-text').innerText.trim();
+            if (!text) {
+                showToast("اكتب جملة في لوحة المفاتيح أولاً للبحث عنها");
+                switchScreen('screen-keyboard');
+                return;
+            }
+            const url = `https://www.google.com/search?q=${encodeURIComponent(text)}`;
+            openWebExternal(url, `البحث عن ${text}`);
+        }
+
+        function sendWhatsAppMessage() {
+            const text = document.getElementById('typed-text').innerText.trim();
+            if (!text) {
+                showToast("اكتب رسالة في لوحة المفاتيح أولاً");
+                return;
+            }
+            const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+            openWebExternal(url, "واتساب");
+        }
+
+        function sendQuickWhatsApp(msg) {
+            const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+            openWebExternal(url, "رسالة واتساب");
+        }
+
+        let keyboardBuilt = false;
+        function buildKeyboard() {
+            if (keyboardBuilt) return;
+            const keys = [
+                'أ', 'إ', 'آ', 'ب', 'ت', 'ث', 'ج', 'ح', 'خ', 'د', 'ذ',
+                'ر', 'ز', 'س', 'ش', 'ص', 'ض', 'ط', 'ظ', 'ع', 'غ', 'ف',
+                'ق', 'ك', 'ل', 'م', 'ن', 'هـ', 'و', 'ي', 'ة', 'ى', '؟',
+                'مسافة', 'حذف', 'مسح الكل', 'نطق الجملة 🔊', 'بحث 🌐'
+            ];
+
+            const container = document.getElementById('keyboard-container');
+            container.innerHTML = '';
+            const display = document.getElementById('typed-text');
+
+            keys.forEach(key => {
+                const btn = document.createElement('button');
+                btn.className = 'gaze-btn key-btn';
+                btn.innerText = key;
+
+                if (key === 'مسافة' || key === 'نطق الجملة 🔊' || key === 'بحث 🌐') {
+                    btn.classList.add('key-wide');
+                }
+                if (key === 'نطق الجملة 🔊') {
+                    btn.style.backgroundColor = 'var(--success)';
+                    btn.style.color = '#000';
+                }
+                if (key === 'بحث 🌐') {
+                    btn.style.backgroundColor = 'var(--primary)';
+                    btn.style.color = '#000';
+                }
+
+                btn.onclick = () => {
+                    if (key === 'مسافة') {
+                        display.innerText += ' ';
+                    } else if (key === 'حذف') {
+                        display.innerText = display.innerText.slice(0, -1);
+                    } else if (key === 'مسح الكل') {
+                        display.innerText = '';
+                    } else if (key === 'نطق الجملة 🔊') {
+                        speakText(display.innerText);
+                    } else if (key === 'بحث 🌐') {
+                        searchTypedTextOnGoogle();
+                    } else {
+                        display.innerText += key;
+                    }
+                };
+
+                container.appendChild(btn);
+            });
+            keyboardBuilt = true;
+        }
+
+        function appendPhrase(phrase) {
+            const display = document.getElementById('typed-text');
+            display.innerText += phrase;
+            speakText(phrase);
+        }
+
+        let isQuranPlaying = false;
+        let offlineChimeTimer = null;
+
+        function toggleAudio() {
+            if (!isQuranPlaying) {
+                isQuranPlaying = true;
+                showToast("📖 وضع الاستماع الصوتي المحلي نشط (بدون إنترنت)");
+                speakText("تم تشغيل الصوت المحلي، يمكنك استخدام قسم الإنترنت للبث المباشر");
+                offlineChimeTimer = setInterval(playOfflineNotificationTone, 4500);
+            } else {
+                clearInterval(offlineChimeTimer);
+                offlineChimeTimer = null;
+                isQuranPlaying = false;
+                showToast("تم إيقاف الصوت");
+            }
+        }
+
+        // ================= متصفح الأقراص الافتراضية والملفات + مشغل الأفلام + التحكم بالبرامج =================
+        const LOCAL_BRIDGE_URL = 'http://127.0.0.1:8765';
+        let localMediaQueue = [];
+        let currentBrowsePath = '';
+        let parentBrowsePath = '';
+
+        const _origSwitchScreen = switchScreen;
+        switchScreen = function(screenId) {
+            _origSwitchScreen(screenId);
+            if (screenId === 'screen-media') {
+                loadDrivesAndFolders(currentBrowsePath || '');
+            }
+        };
+
+        async function loadDrivesAndFolders(targetPath) {
+            const listEl = document.getElementById('media-playlist');
+            const folderLbl = document.getElementById('current-folder-label');
+            if (!listEl) return;
+
+            currentBrowsePath = targetPath || '';
+            if (folderLbl) {
+                folderLbl.innerText = currentBrowsePath ? `📂 ${currentBrowsePath}` : '💽 الأقراص المتوفرة في الجهاز';
+            }
+
+            try {
+                const resp = await fetch(`${LOCAL_BRIDGE_URL}/api/list?path=${encodeURIComponent(currentBrowsePath)}`);
+                if (!resp.ok) throw new Error('bridge_error');
+                const data = await resp.json();
+                parentBrowsePath = data.parent || '';
+                renderDrivesAndEntries(data.items || []);
+            } catch (err) {
+                listEl.innerHTML = `
+                    <div style="background:rgba(245,158,11,0.15); border:1px solid var(--warning); border-radius:10px; padding:10px; color:#fde68a; font-size:0.9rem; line-height:1.5;">
+                        ⚠️ لعرض جميع الأقراص والمجلدات تلقائياً تأكد من تشغيل <strong>HeadMouse_Windows_v13.py</strong>.<br>
+                        أو اضغط الزر أدناه لاختيار أي فيلم أو مسلسل من أي قرص مباشرة:
+                    </div>
+                    <button class="gaze-btn" onclick="pickLocalMediaFiles()" style="padding:14px; background:#0284c7; border-color:#38bdf8; font-size:1.1rem; font-weight:bold;">
+                        📂 اضغط هنا لاختيار الأفلام والمسلسلات من الجهاز
+                    </button>
+                `;
+            }
+        }
+
+        function navigateParentFolder() {
+            loadDrivesAndFolders(parentBrowsePath || '');
+        }
+
+        function renderDrivesAndEntries(items) {
+            const listEl = document.getElementById('media-playlist');
+            if (!listEl) return;
+            listEl.innerHTML = '';
+
+            if (!items.length) {
+                listEl.innerHTML = '<div style="color:var(--text-muted); padding:10px;">هذا المجلد فارغ.</div>';
+                return;
+            }
+
+            items.forEach(item => {
+                const btn = document.createElement('button');
+                btn.className = 'gaze-btn';
+                btn.style.padding = '11px 14px';
+                btn.style.flexDirection = 'row';
+                btn.style.justifyContent = 'flex-start';
+                btn.style.gap = '10px';
+                btn.style.textAlign = 'right';
+                btn.style.fontSize = '1rem';
+
+                if (item.type === 'drive') {
+                    btn.style.borderColor = '#38bdf8';
+                    btn.innerHTML = `<span>💽</span><span><strong>${item.name}</strong> ${item.label ? '(' + item.label + ')' : ''}</span>`;
+                    btn.onclick = () => loadDrivesAndFolders(item.path);
+                } else if (item.type === 'dir') {
+                    btn.style.borderColor = '#f59e0b';
+                    btn.innerHTML = `<span>📁</span><span>${item.name}</span>`;
+                    btn.onclick = () => loadDrivesAndFolders(item.path);
+                } else {
+                    btn.style.borderColor = '#22c55e';
+                    btn.innerHTML = `<span>🎬</span><span>${item.name}</span>`;
+                    btn.onclick = () => playStreamFromBridge(item.path, item.name);
+                }
+                listEl.appendChild(btn);
+            });
+        }
+
+        function playStreamFromBridge(filePath, fileName) {
+            const player = document.getElementById('local-media-player');
+            const titleEl = document.getElementById('now-playing-title');
+            if (!player) return;
+            const streamUrl = `${LOCAL_BRIDGE_URL}/api/stream?path=${encodeURIComponent(filePath)}`;
+            player.src = streamUrl;
+            player.play().catch(() => {});
+            if (titleEl) titleEl.innerText = `🎬 جاري العرض: ${fileName}`;
+            showToast(`▶️ تشغيل: ${fileName}`);
+        }
+
+        function pickLocalMediaFiles() {
+            const inp = document.getElementById('local-media-input');
+            if (inp) inp.click();
+        }
+
+        function handleLocalMediaSelected(event) {
+            const files = Array.from((event && event.target && event.target.files) || []);
+            if (!files.length) return;
+            localMediaQueue = files.map((file, idx) => ({
+                id: idx,
+                name: file.name,
+                url: URL.createObjectURL(file)
+            }));
+            const listEl = document.getElementById('media-playlist');
+            if (listEl) {
+                listEl.innerHTML = '';
+                localMediaQueue.forEach((item, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'gaze-btn';
+                    btn.style.padding = '10px';
+                    btn.style.flexDirection = 'row';
+                    btn.style.justifyContent = 'flex-start';
+                    btn.style.gap = '8px';
+                    btn.innerText = `▶️ ${item.name}`;
+                    btn.onclick = () => playLocalMediaByIndex(idx);
+                    listEl.appendChild(btn);
+                });
+            }
+            playLocalMediaByIndex(0);
+            showToast(`تم تحميل ${localMediaQueue.length} ملف للمشاهدة`);
+        }
+
+        function playLocalMediaByIndex(idx) {
+            const item = localMediaQueue[idx];
+            const player = document.getElementById('local-media-player');
+            const titleEl = document.getElementById('now-playing-title');
+            if (!item || !player) return;
+            player.src = item.url;
+            player.play().catch(() => {});
+            if (titleEl) titleEl.innerText = `🎬 جاري العرض: ${item.name}`;
+        }
+
+        function togglePlayPauseMedia() {
+            const player = document.getElementById('local-media-player');
+            if (!player || !player.src) {
+                pickLocalMediaFiles();
+                return;
+            }
+            if (player.paused) {
+                player.play().catch(() => {});
+                showToast('▶️ تشغيل');
+            } else {
+                player.pause();
+                showToast('⏸️ إيقاف مؤقت');
+            }
+        }
+
+        function seekMedia(deltaSec) {
+            const player = document.getElementById('local-media-player');
+            if (!player || !player.src) return;
+            player.currentTime = Math.max(0, Math.min(player.duration || player.currentTime + deltaSec, player.currentTime + deltaSec));
+        }
+
+        function toggleTheaterMode() {
+            const card = document.getElementById('media-player-card');
+            if (!card) return;
+            if (card.classList.contains('theater-mode')) {
+                exitTheaterMode();
+            } else {
+                card.classList.add('theater-mode');
+                showToast('🖥️ وضع الشاشة الكبيرة الآمن — المؤشر وأزرار الرجوع ظاهرة');
+            }
+        }
+
+        function exitTheaterMode() {
+            const card = document.getElementById('media-player-card');
+            if (card && card.classList.contains('theater-mode')) {
+                card.classList.remove('theater-mode');
+                showToast('↙️ تمت العودة لوضع الشاشة العادي');
+            }
+            try {
+                if (document.fullscreenElement && document.exitFullscreen) {
+                    document.exitFullscreen().catch(() => {});
+                }
+            } catch (e) {}
+        }
+
+        async function launchSystemApp(exeCmd, label) {
+            try {
+                const resp = await fetch(`${LOCAL_BRIDGE_URL}/api/app/launch?cmd=${encodeURIComponent(exeCmd)}&label=${encodeURIComponent(label)}`);
+                if (resp.ok) {
+                    showToast(`🚀 تم فتح ${label}`);
+                    return;
+                }
+            } catch (e) {}
+            showToast(`تعذر فتح ${label}`);
+        }
+
+        async function closeSystemApp() {
+            try {
+                const resp = await fetch(`${LOCAL_BRIDGE_URL}/api/app/close`);
+                if (resp.ok) {
+                    showToast('✖ تم إغلاق البرنامج النشط');
+                    return;
+                }
+            } catch (e) {}
+            showToast('أغلق البرنامج من نافذة التحكم العائمة');
+        }
+    
+        // ================= إيقاف / استئناف النقر في كل الصفحات بالمرور في المنطقة العلوية =================
+        if (typeof pageClickEnabled === 'undefined') {
+            var pageClickEnabled = true;
+        }
+        let topZoneArmed = true;
+
+        function syncPageClickModeUI() {
+            const btn = document.getElementById('hover-click-toggle-btn');
+            const lbl = document.getElementById('hover-click-label');
+            if (!btn || !lbl) return;
+            if (pageClickEnabled) {
+                btn.classList.remove('click-paused');
+                lbl.innerText = 'النقر: مفعّل';
+            } else {
+                btn.classList.add('click-paused');
+                lbl.innerText = 'النقر: متوقف';
+            }
+        }
+
+        function setGlobalClickPaused(paused, announce = true) {
+            pageClickEnabled = !paused;
+            syncPageClickModeUI();
+
+            fetch(`http://127.0.0.1:8765/api/click-mode?enabled=${pageClickEnabled ? '1' : '0'}`)
+                .catch(() => {});
+
+            if (announce) {
+                if (pageClickEnabled) {
+                    showToast('✅ تم إعادة تفعيل النقر في جميع الصفحات');
+                } else {
+                    showToast('⛔ تم إيقاف النقر مؤقتاً (مرّر في المنطقة العلوية للعودة)');
+                }
+            }
+        }
+
+        togglePageClickMode = function(source = 'manual') {
+            setGlobalClickPaused(pageClickEnabled, true);
+        };
+
+        function isInsideTopToggleZone(x, y) {
+            const toggleBtn = document.getElementById('hover-click-toggle-btn');
+            if (toggleBtn) {
+                const r = toggleBtn.getBoundingClientRect();
+                if (r.width > 0 && r.height > 0) {
+                    return x >= r.left - 12 && x <= r.right + 12 && y >= r.top - 12 && y <= r.bottom + 12;
+                }
+            }
+            const headerEl = document.querySelector('header');
+            if (headerEl) {
+                const hr = headerEl.getBoundingClientRect();
+                return y >= hr.top && y <= hr.bottom;
+            }
+            return false;
+        }
+
+        function checkTopZoneHover(x, y) {
+            if (isInsideTopToggleZone(x, y)) {
+                if (topZoneArmed) {
+                    topZoneArmed = false;
+                    setGlobalClickPaused(pageClickEnabled, true);
+                }
+            } else {
+                topZoneArmed = true;
+            }
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            checkTopZoneHover(e.clientX, e.clientY);
+        });
+
+        window.addEventListener('load', () => {
+            syncPageClickModeUI();
+        });
+
+        dwellLoop = function(timestamp) {
+            checkTopZoneHover(currentX, currentY);
+
+            if (!pageClickEnabled) {
+                if (hoveredElement) {
+                    hoveredElement.classList.remove('hovered');
+                    hoveredElement = null;
+                }
+                progressCircle.style.strokeDashoffset = circumference;
+                requestAnimationFrame(dwellLoop);
+                return;
+            }
+
+            cursor.style.display = 'none';
+            const elemBelow = document.elementFromPoint(currentX, currentY);
+            cursor.style.display = 'flex';
+
+            const btn = elemBelow ? elemBelow.closest('.gaze-btn') : null;
+
+            if (btn) {
+                if (hoveredElement !== btn) {
+                    if (hoveredElement) hoveredElement.classList.remove('hovered');
+                    hoveredElement = btn;
+                    hoveredElement.classList.add('hovered');
+                    hoverStartTime = timestamp;
+                } else {
+                    const elapsed = timestamp - hoverStartTime;
+                    const progress = Math.min(elapsed / DWELL_TIME, 1);
+                    const offset = circumference - progress * circumference;
+                    progressCircle.style.strokeDashoffset = offset;
+
+                    if (progress >= 1) {
+                        btn.click();
+                        hoverStartTime = timestamp + 850;
+                        progressCircle.style.strokeDashoffset = circumference;
+                    }
+                }
+            } else {
+                if (hoveredElement) {
+                    hoveredElement.classList.remove('hovered');
+                    hoveredElement = null;
+                }
+                progressCircle.style.strokeDashoffset = circumference;
+            }
+
+            requestAnimationFrame(dwellLoop);
+        };
+
+    </script>
+</body>
+</html>

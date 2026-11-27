@@ -1,0 +1,17 @@
+{
+    "sensitivity_x": 2.6,
+    "sensitivity_y": 3.2,
+    "smoothing": 0.25,
+    "deadzone": 0.004,
+    "dwell_time": 1.4,
+    "dwell_radius": 28,
+    "click_cooldown": 0.9,
+    "scroll_speed": 350,
+    "dwell_enabled": true,
+    "invert_x": false,
+    "invert_y": false,
+    "beep_on_click": true,
+    "camera_index": 0,
+    "panel_scale": 1.0,
+    "auto_resume_minutes": 10
+}
